@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import {
   Box,
+  Button,
+  CircularProgress,
   Collapse,
   Divider,
   Grid,
@@ -10,6 +12,8 @@ import {
   Typography,
   InputAdornment,
 } from '@mui/material';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { gerarOrcamentoPdf, exportarOuCompartilharPdf } from '../utils/gerarOrcamentoPdf';
 
 // Taxas mensais fixas cobradas independente do valor financiado
 // (conservação da área, serviço "Slim", melhoramentos e transporte)
@@ -26,11 +30,14 @@ const formatCurrency = (val) =>
     Number.isFinite(val) ? val : 0
   );
 
-export default function OrcamentoSimulador({ valorLote, open }) {
+export default function OrcamentoSimulador({ lote, open }) {
+  const valorLote = lote.preco_vista;
   const [percEntrada, setPercEntrada] = useState(2);
   // 0,3312% a.m. é a taxa efetiva usada pela planilha oficial (o "0,33%" exibido lá é arredondado)
   const [taxaJurosMensal, setTaxaJurosMensal] = useState(0.3312);
   const [prazoMeses, setPrazoMeses] = useState(180);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [erroPdf, setErroPdf] = useState(null);
 
   const calculo = useMemo(() => {
     const entrada = Math.max(0, Math.min(100, Number(percEntrada) || 0)) / 100;
@@ -56,6 +63,28 @@ export default function OrcamentoSimulador({ valorLote, open }) {
       pagamentoComTaxas: pagamentoMensal + TOTAL_TAXAS_FIXAS,
     };
   }, [valorLote, percEntrada, taxaJurosMensal, prazoMeses]);
+
+  const handleExportarPdf = async () => {
+    setErroPdf(null);
+    setGerandoPdf(true);
+    try {
+      const doc = await gerarOrcamentoPdf({
+        lote,
+        percEntrada,
+        taxaJurosMensal,
+        prazoMeses,
+        valorLote,
+        taxasFixas: TAXAS_FIXAS,
+        totalTaxas: TOTAL_TAXAS_FIXAS,
+        ...calculo,
+      });
+      await exportarOuCompartilharPdf(doc, `orcamento-quadra-${lote.quadra}-lote-${lote.lote}.pdf`);
+    } catch (e) {
+      setErroPdf('Não foi possível gerar o PDF. Tente novamente.');
+    } finally {
+      setGerandoPdf(false);
+    }
+  };
 
   return (
     <Collapse in={open} unmountOnExit>
@@ -199,6 +228,25 @@ export default function OrcamentoSimulador({ valorLote, open }) {
             </Typography>
           </Box>
         </Stack>
+      </Box>
+
+      {/* Exportação do orçamento em PDF */}
+      <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={gerandoPdf ? <CircularProgress size={18} color="inherit" /> : <PictureAsPdfIcon />}
+          onClick={handleExportarPdf}
+          disabled={gerandoPdf}
+          id="btn-exportar-orcamento-pdf"
+        >
+          {gerandoPdf ? 'Gerando PDF...' : 'Exportar / Enviar PDF'}
+        </Button>
+        {erroPdf && (
+          <Typography variant="caption" color="error">
+            {erroPdf}
+          </Typography>
+        )}
       </Box>
     </Collapse>
   );

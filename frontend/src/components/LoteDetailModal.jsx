@@ -217,7 +217,7 @@ export default function LoteDetailModal({ lote, open, onClose }) {
           </Grid>
         </Grid>
 
-        <OrcamentoSimulador valorLote={lote.preco_vista} open={mostrarOrcamento} />
+        <OrcamentoSimulador lote={lote} open={mostrarOrcamento} />
       </DialogContent>
 
       <DialogActions sx={{ p: 3, pt: 0 }}>
