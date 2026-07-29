@@ -19,8 +19,17 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CalculateIcon from '@mui/icons-material/Calculate';
+import OrcamentoSimulador from './OrcamentoSimulador';
 
 export default function LoteDetailModal({ lote, open, onClose }) {
+  const [mostrarOrcamento, setMostrarOrcamento] = React.useState(false);
+
+  // Reseta a exibição do simulador sempre que um novo lote é aberto
+  React.useEffect(() => {
+    setMostrarOrcamento(false);
+  }, [lote?.id]);
+
   if (!lote) return null;
 
   const formatCurrency = (val) => {
@@ -207,11 +216,22 @@ export default function LoteDetailModal({ lote, open, onClose }) {
             </Box>
           </Grid>
         </Grid>
+
+        <OrcamentoSimulador valorLote={lote.preco_vista} open={mostrarOrcamento} />
       </DialogContent>
 
       <DialogActions sx={{ p: 3, pt: 0 }}>
         <Button variant="outlined" color="inherit" onClick={onClose}>
           Fechar
+        </Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<CalculateIcon />}
+          onClick={() => setMostrarOrcamento((v) => !v)}
+          id="btn-orcamento"
+        >
+          {mostrarOrcamento ? 'Ocultar Orçamento' : 'Orçamento'}
         </Button>
       </DialogActions>
     </Dialog>
