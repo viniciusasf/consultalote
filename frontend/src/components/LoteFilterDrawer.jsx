@@ -39,9 +39,12 @@ export default function LoteFilterDrawer({
   // Valor bruto digitado pelo usuário (somente dentro do drawer)
   const [catInput, setCatInput] = React.useState(filters.tamanho_categoria ? String(filters.tamanho_categoria) : '');
 
-  // Sincroniza o input quando o filtro externo for limpo
+  // Sincroniza o input quando o filtro externo for limpo (null/undefined).
+  // Não usar falsy puro aqui: valores digitados abaixo de 100 (ex: "4", "50")
+  // resolvem para categoria 0, que é falsy mas não significa "limpo" — se
+  // usássemos falsy, o input seria apagado a cada tecla digitada.
   React.useEffect(() => {
-    if (!filters.tamanho_categoria) setCatInput('');
+    if (filters.tamanho_categoria == null) setCatInput('');
   }, [filters.tamanho_categoria]);
 
   const handleCatChange = (e) => {

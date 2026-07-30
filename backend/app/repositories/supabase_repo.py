@@ -58,7 +58,12 @@ class SupabaseLoteRepository(LoteRepository):
         if filters.q:
             q = _OR_FILTER_UNSAFE_CHARS.sub("", filters.q.strip())
             if q:
-                query = query.or_(f"lote.ilike.%{q}%,quadra.ilike.%{q}%,id.ilike.%{q}%")
+                or_conditions = [f"lote.ilike.%{q}%", f"quadra.ilike.%{q}%", f"id.ilike.%{q}%"]
+                if q.isdigit():
+                    # tamanho_categoria é numeric no banco: PostgREST não aceita
+                    # cast (::text) dentro do or_(), então comparamos por igualdade.
+                    or_conditions.append(f"tamanho_categoria.eq.{int(q)}")
+                query = query.or_(",".join(or_conditions))
 
         if filters.gleba:
             query = query.ilike("gleba", filters.gleba.strip())

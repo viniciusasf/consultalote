@@ -14,6 +14,7 @@ def filter_and_sort_lotes(lotes: List[Lote], filters: LoteFilterParams) -> List[
             if query in l.lote.lower()
             or query in l.quadra.lower()
             or query in l.id.lower()
+            or (query.isdigit() and l.tamanho_categoria == int(query))
         ]
 
     if filters.gleba:

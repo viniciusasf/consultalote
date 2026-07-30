@@ -145,7 +145,7 @@ export default function HomePage() {
               id="input-busca"
               size="small"
               fullWidth
-              placeholder="Buscar por quadra, lote..."
+              placeholder="Buscar por quadra, lote, categoria..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               InputProps={{
