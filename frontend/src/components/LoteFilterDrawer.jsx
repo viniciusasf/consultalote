@@ -28,6 +28,7 @@ function resolverCategoria(valor) {
 export default function LoteFilterDrawer({
   open,
   onClose,
+  onApply,
   filters,
   onFilterChange,
   onResetFilters,
@@ -237,7 +238,7 @@ export default function LoteFilterDrawer({
           fullWidth
           variant="contained"
           color="primary"
-          onClick={onClose}
+          onClick={onApply}
           id="btn-aplicar-filtros"
         >
           Aplicar

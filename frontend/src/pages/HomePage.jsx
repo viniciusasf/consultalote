@@ -33,6 +33,7 @@ export default function HomePage() {
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [draftFilters, setDraftFilters]         = useState(DEFAULT_FILTERS);
   const [selectedLote, setSelectedLote] = useState(null);
   const [detailModalOpen, setDetailModalOpen]   = useState(false);
   const [searchInput, setSearchInput]   = useState('');
@@ -80,6 +81,25 @@ export default function HomePage() {
   const handleResetFilters = () => {
     setSearchInput('');
     setFilters(DEFAULT_FILTERS);
+  };
+
+  // Filtros do Drawer só são aplicados na tabela ao clicar em "Aplicar"
+  const handleOpenFilterDrawer = () => {
+    setDraftFilters(filters);
+    setFilterDrawerOpen(true);
+  };
+
+  const handleDraftFilterChange = (key, value) => {
+    setDraftFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleDraftResetFilters = () => {
+    setDraftFilters((prev) => ({ ...DEFAULT_FILTERS, q: prev.q }));
+  };
+
+  const handleApplyFilters = () => {
+    setFilters(draftFilters);
+    setFilterDrawerOpen(false);
   };
 
   const activeFilterCount = [
@@ -196,7 +216,7 @@ export default function HomePage() {
               color="primary"
               size="small"
               startIcon={<FilterListIcon />}
-              onClick={() => setFilterDrawerOpen(true)}
+              onClick={handleOpenFilterDrawer}
             >
               Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
             </Button>
@@ -247,9 +267,10 @@ export default function HomePage() {
       <LoteFilterDrawer
         open={filterDrawerOpen}
         onClose={() => setFilterDrawerOpen(false)}
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onResetFilters={handleResetFilters}
+        onApply={handleApplyFilters}
+        filters={draftFilters}
+        onFilterChange={handleDraftFilterChange}
+        onResetFilters={handleDraftResetFilters}
         glebasDisponiveis={glebas}
         quadrasDisponiveis={quadras}
         totalResultados={totalCount}
