@@ -7,6 +7,13 @@ from app.core.config import get_settings
 
 TABLE = "lotes"
 
+# PostgREST limita o nº de linhas retornadas por requisição (db-max-rows,
+# tipicamente 1000) independente do que for pedido. Sem paginar via .range(),
+# qualquer tabela com mais linhas que esse limite tem o resultado truncado
+# silenciosamente na ordem física/default — foi o que escondia as Glebas 2 e 3
+# (a tabela tem 3850 lotes, acima do limite de 1000).
+_PAGE_SIZE = 1000
+
 # Caracteres que têm significado especial no filtro or_() do PostgREST
 _OR_FILTER_UNSAFE_CHARS = re.compile(r"[,()]")
 
@@ -46,49 +53,71 @@ class SupabaseLoteRepository(LoteRepository):
         result = self.client.table(TABLE).select("id", count="exact", head=True).execute()
         return result.count or 0
 
+    def _fetch_all_rows(self, build_query) -> Tuple[List[dict], int]:
+        """Percorre todas as páginas de uma query via .range(), já que o
+        PostgREST trunca silenciosamente para no máx. ~1000 linhas por
+        requisição (db-max-rows) quando isso não é feito explicitamente."""
+        rows: List[dict] = []
+        total = 0
+        offset = 0
+        while True:
+            result = build_query().range(offset, offset + _PAGE_SIZE - 1).execute()
+            if offset == 0:
+                total = result.count or 0
+            rows.extend(result.data)
+            if len(result.data) < _PAGE_SIZE:
+                break
+            offset += _PAGE_SIZE
+        return rows, total
+
     def get_filter_options(self) -> Tuple[List[str], List[str]]:
-        result = self.client.table(TABLE).select("gleba,quadra").execute()
-        glebas = sorted({row["gleba"] for row in result.data if row.get("gleba")})
-        quadras = sorted({row["quadra"] for row in result.data if row.get("quadra")})
+        rows, _ = self._fetch_all_rows(
+            lambda: self.client.table(TABLE).select("gleba,quadra", count="exact")
+        )
+        glebas = sorted({row["gleba"] for row in rows if row.get("gleba")})
+        quadras = sorted({row["quadra"] for row in rows if row.get("quadra")})
         return glebas, quadras
 
     def get_lotes_filtered(self, filters: LoteFilterParams) -> Tuple[List[Lote], int]:
-        query = self.client.table(TABLE).select("*", count="exact")
+        def build_query():
+            query = self.client.table(TABLE).select("*", count="exact")
 
-        if filters.q:
-            q = _OR_FILTER_UNSAFE_CHARS.sub("", filters.q.strip())
-            if q:
-                or_conditions = [f"lote.ilike.%{q}%", f"quadra.ilike.%{q}%", f"id.ilike.%{q}%"]
-                if q.isdigit():
-                    # tamanho_categoria é numeric no banco: PostgREST não aceita
-                    # cast (::text) dentro do or_(), então comparamos por igualdade.
-                    or_conditions.append(f"tamanho_categoria.eq.{int(q)}")
-                query = query.or_(",".join(or_conditions))
+            if filters.q:
+                q = _OR_FILTER_UNSAFE_CHARS.sub("", filters.q.strip())
+                if q:
+                    or_conditions = [f"lote.ilike.%{q}%", f"quadra.ilike.%{q}%", f"id.ilike.%{q}%"]
+                    if q.isdigit():
+                        # tamanho_categoria é numeric no banco: PostgREST não aceita
+                        # cast (::text) dentro do or_(), então comparamos por igualdade.
+                        or_conditions.append(f"tamanho_categoria.eq.{int(q)}")
+                    query = query.or_(",".join(or_conditions))
 
-        if filters.gleba:
-            query = query.ilike("gleba", filters.gleba.strip())
+            if filters.gleba:
+                query = query.ilike("gleba", filters.gleba.strip())
 
-        if filters.quadra:
-            query = query.ilike("quadra", filters.quadra.strip())
+            if filters.quadra:
+                query = query.ilike("quadra", filters.quadra.strip())
 
-        if filters.tamanho_categoria is not None:
-            query = query.eq("tamanho_categoria", filters.tamanho_categoria)
+            if filters.tamanho_categoria is not None:
+                query = query.eq("tamanho_categoria", filters.tamanho_categoria)
 
-        if filters.area_min is not None:
-            query = query.gte("area_m2", filters.area_min)
-        if filters.area_max is not None:
-            query = query.lte("area_m2", filters.area_max)
+            if filters.area_min is not None:
+                query = query.gte("area_m2", filters.area_min)
+            if filters.area_max is not None:
+                query = query.lte("area_m2", filters.area_max)
 
-        if filters.preco_min is not None:
-            query = query.gte("preco_vista", filters.preco_min)
-        if filters.preco_max is not None:
-            query = query.lte("preco_vista", filters.preco_max)
+            if filters.preco_min is not None:
+                query = query.gte("preco_vista", filters.preco_min)
+            if filters.preco_max is not None:
+                query = query.lte("preco_vista", filters.preco_max)
 
-        column, desc = _ORDER_COLUMNS.get(filters.order_by, _ORDER_COLUMNS["preco_asc"])
-        query = query.order(column, desc=desc)
-        if filters.order_by == "lote_asc":
-            query = query.order("ordem", desc=False)
+            column, desc = _ORDER_COLUMNS.get(filters.order_by, _ORDER_COLUMNS["preco_asc"])
+            query = query.order(column, desc=desc)
+            if filters.order_by == "lote_asc":
+                query = query.order("ordem", desc=False)
 
-        result = query.execute()
-        items = [Lote(**row) for row in result.data]
-        return items, result.count or 0
+            return query
+
+        rows, total = self._fetch_all_rows(build_query)
+        items = [Lote(**row) for row in rows]
+        return items, total
