@@ -124,10 +124,10 @@ export default function LoteDetailModal({ lote, open, onClose }) {
                 }}
               >
                 <Typography variant="caption" sx={{ textTransform: 'uppercase', opacity: 0.9, fontWeight: 600 }}>
-                  Valor À Vista (1x Promocional)
+                  Valor do Lote
                 </Typography>
                 <Typography variant="h3" sx={{ fontWeight: 800, my: 0.5, fontFamily: 'Outfit, sans-serif' }}>
-                  {formatCurrency(lote.preco_vista)}
+                  {formatCurrency(lote.valor_base)}
                 </Typography>
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
                   Valor por m²: <strong>{formatCurrency(lote.preco_m2)}</strong>
