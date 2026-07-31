@@ -12,6 +12,7 @@ import {
   Divider,
   Paper,
   IconButton,
+  Collapse,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SquareFootIcon from '@mui/icons-material/SquareFoot';
@@ -20,14 +21,18 @@ import PaymentsIcon from '@mui/icons-material/Payments';
 import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CalculateIcon from '@mui/icons-material/Calculate';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import OrcamentoSimulador from './OrcamentoSimulador';
 
 export default function LoteDetailModal({ lote, open, onClose }) {
   const [mostrarOrcamento, setMostrarOrcamento] = React.useState(false);
+  const [mostrarDetalhes, setMostrarDetalhes] = React.useState(false);
 
-  // Reseta a exibição do simulador sempre que um novo lote é aberto
+  // Reseta a exibição do simulador e dos detalhes sempre que um novo lote é aberto
   React.useEffect(() => {
     setMostrarOrcamento(false);
+    setMostrarDetalhes(false);
   }, [lote?.id]);
 
   if (!lote) return null;
@@ -94,128 +99,143 @@ export default function LoteDetailModal({ lote, open, onClose }) {
           )}
         </Box>
 
-        <Grid container spacing={3}>
-          {/* Card Preço à Vista */}
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2.5,
-                bgcolor: 'primary.light',
-                color: '#ffffff',
-                borderRadius: 2,
-              }}
-            >
-              <Typography variant="caption" sx={{ textTransform: 'uppercase', opacity: 0.9, fontWeight: 600 }}>
-                Valor À Vista (1x Promocional)
-              </Typography>
-              <Typography variant="h3" sx={{ fontWeight: 800, my: 0.5, fontFamily: 'Outfit, sans-serif' }}>
-                {formatCurrency(lote.preco_vista)}
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                Valor por m²: <strong>{formatCurrency(lote.preco_m2)}</strong>
-              </Typography>
-            </Paper>
+        <Button
+          variant="text"
+          color="primary"
+          onClick={() => setMostrarDetalhes((v) => !v)}
+          endIcon={mostrarDetalhes ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          id="btn-detalhes-financeiros"
+          sx={{ fontWeight: 600, mb: 1, pl: 0 }}
+        >
+          {mostrarDetalhes ? 'Ocultar valores e taxas' : 'Ver valores à vista, financiado e taxas'}
+        </Button>
+
+        <Collapse in={mostrarDetalhes}>
+          <Grid container spacing={3}>
+            {/* Card Preço à Vista */}
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  bgcolor: 'primary.light',
+                  color: '#ffffff',
+                  borderRadius: 2,
+                }}
+              >
+                <Typography variant="caption" sx={{ textTransform: 'uppercase', opacity: 0.9, fontWeight: 600 }}>
+                  Valor À Vista (1x Promocional)
+                </Typography>
+                <Typography variant="h3" sx={{ fontWeight: 800, my: 0.5, fontFamily: 'Outfit, sans-serif' }}>
+                  {formatCurrency(lote.preco_vista)}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  Valor por m²: <strong>{formatCurrency(lote.preco_m2)}</strong>
+                </Typography>
+              </Paper>
+            </Grid>
+
+            {/* Card Financiamento */}
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  bgcolor: 'background.default',
+                  border: '1px solid rgba(0,0,0,0.08)',
+                  borderRadius: 2,
+                }}
+              >
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>
+                  Plano Financiado 180 Meses
+                </Typography>
+                <Typography variant="h4" color="text.primary" sx={{ fontWeight: 800, my: 0.5, fontFamily: 'Outfit, sans-serif' }}>
+                  180x {formatCurrency(lote.valor_parcela_180x)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Preço total financiado: <strong>{formatCurrency(lote.preco_financiado_180x)}</strong>
+                </Typography>
+              </Paper>
+            </Grid>
           </Grid>
 
-          {/* Card Financiamento */}
-          <Grid item xs={12} md={6}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2.5,
-                bgcolor: 'background.default',
-                border: '1px solid rgba(0,0,0,0.08)',
-                borderRadius: 2,
-              }}
-            >
-              <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>
-                Plano Financiado 180 Meses
-              </Typography>
-              <Typography variant="h4" color="text.primary" sx={{ fontWeight: 800, my: 0.5, fontFamily: 'Outfit, sans-serif' }}>
-                180x {formatCurrency(lote.valor_parcela_180x)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Preço total financiado: <strong>{formatCurrency(lote.preco_financiado_180x)}</strong>
-              </Typography>
-            </Paper>
-          </Grid>
-        </Grid>
+          <Divider sx={{ my: 3 }} />
 
-        <Divider sx={{ my: 3 }} />
+          {/* Tabela de Especificações detalhadas */}
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Outfit, sans-serif' }}>
+            Resumo de Valores e Taxas
+          </Typography>
 
-        {/* Tabela de Especificações detalhadas */}
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Outfit, sans-serif' }}>
-          Resumo de Valores e Taxas
-        </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={4}>
+              <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Área Total
+                </Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {lote.area_m2.toLocaleString('pt-BR')} m²
+                </Typography>
+              </Box>
+            </Grid>
 
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={4}>
-            <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Área Total
-              </Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                {lote.area_m2.toLocaleString('pt-BR')} m²
-              </Typography>
-            </Box>
-          </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Valor Base Tabela
+                </Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {formatCurrency(lote.valor_base)}
+                </Typography>
+              </Box>
+            </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
-            <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Valor Base Tabela
-              </Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                {formatCurrency(lote.valor_base)}
-              </Typography>
-            </Box>
-          </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Entrada Estimada (5%)
+                </Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {formatCurrency(lote.entrada_5pct)}
+                </Typography>
+              </Box>
+            </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
-            <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Entrada Estimada (5%)
-              </Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                {formatCurrency(lote.entrada_5pct)}
-              </Typography>
-            </Box>
-          </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Corretagem (6%)
+                </Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {formatCurrency(lote.corretagem_6pct)}
+                </Typography>
+              </Box>
+            </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
-            <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Corretagem (6%)
-              </Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                {formatCurrency(lote.corretagem_6pct)}
-              </Typography>
-            </Box>
-          </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  IPTU Mensal Estimado
+                </Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {formatCurrency(lote.iptu_mensal)}
+                </Typography>
+              </Box>
+            </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
-            <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                IPTU Mensal Estimado
-              </Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                {formatCurrency(lote.iptu_mensal)}
-              </Typography>
-            </Box>
+            <Grid item xs={12} sm={6} md={4}>
+              <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Identificador Único
+                </Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {lote.id}
+                </Typography>
+              </Box>
+            </Grid>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
-            <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Identificador Único
-              </Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                {lote.id}
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
+          <Divider sx={{ my: 3 }} />
+        </Collapse>
 
         <OrcamentoSimulador lote={lote} open={mostrarOrcamento} />
       </DialogContent>
