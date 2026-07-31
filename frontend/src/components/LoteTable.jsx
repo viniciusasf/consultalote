@@ -23,7 +23,7 @@ const COLS = [
   { id: 'tamanho_categoria', label: 'Cat.',             align: 'center',width: 70  },
   { id: 'area_m2',           label: 'Área (m²)',        align: 'right', width: 100 },
   { id: 'preco_m2',          label: 'R$/m²',            align: 'right', width: 100 },
-  { id: 'preco_vista',       label: 'À Vista',          align: 'right', width: 130 },
+  { id: 'valor_base',        label: 'À Vista',          align: 'right', width: 130 },
   { id: 'preco_financiado_180x', label: 'Total 180x',  align: 'right', width: 130 },
   { id: 'valor_parcela_180x',label: 'Parcela 180x',    align: 'right', width: 120 },
   { id: 'entrada_5pct',      label: 'Entrada (5%)',     align: 'right', width: 120 },
@@ -46,7 +46,7 @@ function getComparator(order, orderBy) {
 
 export default function LoteTable({ lotes, onSelect }) {
   const [order, setOrder]       = useState('asc');
-  const [orderBy, setOrderBy]   = useState('preco_vista');
+  const [orderBy, setOrderBy]   = useState('valor_base');
   const [page, setPage]         = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
 
@@ -135,7 +135,7 @@ export default function LoteTable({ lotes, onSelect }) {
                 </TableCell>
                 <TableCell align="right">
                   <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#1b4332' }}>
-                    {fmt(lote.preco_vista)}
+                    {fmt(lote.valor_base)}
                   </Typography>
                 </TableCell>
                 <TableCell align="right" sx={{ fontSize: '0.78rem', color: '#444' }}>

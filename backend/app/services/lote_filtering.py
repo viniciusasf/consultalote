@@ -37,9 +37,9 @@ def filter_and_sort_lotes(lotes: List[Lote], filters: LoteFilterParams) -> List[
         filtered = [l for l in filtered if l.preco_vista <= filters.preco_max]
 
     if filters.order_by == "preco_asc":
-        filtered = sorted(filtered, key=lambda l: l.preco_vista)
+        filtered = sorted(filtered, key=lambda l: l.valor_base)
     elif filters.order_by == "preco_desc":
-        filtered = sorted(filtered, key=lambda l: l.preco_vista, reverse=True)
+        filtered = sorted(filtered, key=lambda l: l.valor_base, reverse=True)
     elif filters.order_by == "area_asc":
         filtered = sorted(filtered, key=lambda l: l.area_m2)
     elif filters.order_by == "area_desc":

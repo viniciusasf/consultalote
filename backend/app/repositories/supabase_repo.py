@@ -11,8 +11,8 @@ TABLE = "lotes"
 _OR_FILTER_UNSAFE_CHARS = re.compile(r"[,()]")
 
 _ORDER_COLUMNS = {
-    "preco_asc": ("preco_vista", False),
-    "preco_desc": ("preco_vista", True),
+    "preco_asc": ("valor_base", False),
+    "preco_desc": ("valor_base", True),
     "area_asc": ("area_m2", False),
     "area_desc": ("area_m2", True),
     "lote_asc": ("quadra", False),
