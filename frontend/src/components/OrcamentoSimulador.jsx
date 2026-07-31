@@ -31,7 +31,7 @@ const formatCurrency = (val) =>
   );
 
 export default function OrcamentoSimulador({ lote, open }) {
-  const valorLote = lote.preco_vista;
+  const valorLote = lote.valor_base;
   const [percEntrada, setPercEntrada] = useState(2);
   // 0,3312% a.m. é a taxa efetiva usada pela planilha oficial (o "0,33%" exibido lá é arredondado)
   const [taxaJurosMensal, setTaxaJurosMensal] = useState(0.3312);
