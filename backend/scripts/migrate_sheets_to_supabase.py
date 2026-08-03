@@ -10,7 +10,9 @@ Pré-requisitos:
 Uso:
   cd backend
   ..\\.venv\\Scripts\\python.exe scripts\\migrate_sheets_to_supabase.py
+  ..\\.venv\\Scripts\\python.exe scripts\\migrate_sheets_to_supabase.py --local "Outro Local"
 """
+import argparse
 import sys
 from pathlib import Path
 
@@ -19,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from supabase import create_client
 from app.repositories.google_sheets import GoogleSheetsLoteRepository
 from app.core.config import get_settings
+from scripts._common import resolve_local_id
 
 BATCH_SIZE = 500
 TABLE = "lotes"
@@ -26,6 +29,13 @@ TABLE = "lotes"
 
 def main():
     settings = get_settings()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--local", default=settings.DEFAULT_LOCAL_NOME,
+        help=f"Nome do Local de destino (padrão: '{settings.DEFAULT_LOCAL_NOME}')",
+    )
+    args = parser.parse_args()
+
     if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
         raise SystemExit("SUPABASE_URL / SUPABASE_KEY não configurados em backend/.env")
 
@@ -34,7 +44,11 @@ def main():
     print(f"{len(lotes)} lotes lidos da planilha.")
 
     client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    local_id = resolve_local_id(client, args.local)
+
     rows = [lote.model_dump() for lote in lotes]
+    for row in rows:
+        row["local_id"] = local_id
 
     for i in range(0, len(rows), BATCH_SIZE):
         batch = rows[i:i + BATCH_SIZE]

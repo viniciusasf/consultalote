@@ -4,6 +4,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.api.v1.lotes import router as lotes_router
+from app.api.v1.auth import router as auth_router
+from app.api.v1.locais import router as locais_router
+from app.api.v1.perfis import router as perfis_router
+from app.api.v1.usuarios import router as usuarios_router
 
 settings = get_settings()
 
@@ -45,6 +49,10 @@ app.add_middleware(
 
 # Registrar rotas v1
 app.include_router(lotes_router, prefix=settings.API_V1_STR)
+app.include_router(auth_router, prefix=settings.API_V1_STR)
+app.include_router(locais_router, prefix=settings.API_V1_STR)
+app.include_router(perfis_router, prefix=settings.API_V1_STR)
+app.include_router(usuarios_router, prefix=settings.API_V1_STR)
 
 @app.get("/", tags=["Health"])
 def root():

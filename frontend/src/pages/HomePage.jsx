@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Container, Box, Typography, Alert, Button, CircularProgress,
   TextField, InputAdornment, FormControl, Select, MenuItem,
@@ -7,10 +8,13 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import LogoutIcon from '@mui/icons-material/Logout';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LoteTable from '../components/LoteTable';
 import LoteDetailModal from '../components/LoteDetailModal';
 import LoteFilterDrawer from '../components/LoteFilterDrawer';
 import { fetchLotes } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_FILTERS = {
   q: '',
@@ -25,6 +29,8 @@ const DEFAULT_FILTERS = {
 };
 
 export default function HomePage() {
+  const navigate = useNavigate();
+  const { isMaster, localNome, logout } = useAuth();
   const [filters, setFilters]           = useState(DEFAULT_FILTERS);
   const [lotes, setLotes]               = useState([]);
   const [glebas, setGlebas]             = useState([]);
@@ -125,15 +131,43 @@ export default function HomePage() {
             />
           )}
         </Box>
-        <Button
-          size="small"
-          startIcon={<RefreshIcon />}
-          onClick={() => loadData(filters)}
-          disabled={loading}
-          sx={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)', border: '1px solid', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
-        >
-          Atualizar
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Chip
+            label={isMaster ? 'Master' : `Local: ${localNome || '—'}`}
+            size="small"
+            variant="outlined"
+            sx={{ color: '#fff', borderColor: 'rgba(255,255,255,0.5)', fontWeight: 600 }}
+          />
+          {isMaster && (
+            <Button
+              size="small"
+              startIcon={<AdminPanelSettingsIcon />}
+              onClick={() => navigate('/admin/locais')}
+              sx={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)', border: '1px solid', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+              id="btn-nav-admin"
+            >
+              Administração
+            </Button>
+          )}
+          <Button
+            size="small"
+            startIcon={<RefreshIcon />}
+            onClick={() => loadData(filters)}
+            disabled={loading}
+            sx={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)', border: '1px solid', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+          >
+            Atualizar
+          </Button>
+          <Button
+            size="small"
+            startIcon={<LogoutIcon />}
+            onClick={logout}
+            sx={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)', border: '1px solid', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+            id="btn-logout"
+          >
+            Sair
+          </Button>
+        </Box>
       </Box>
 
       {/* Barra de Filtros */}
@@ -145,7 +179,7 @@ export default function HomePage() {
               id="input-busca"
               size="small"
               fullWidth
-              placeholder="Buscar por quadra, lote, categoria..."
+              placeholder="Buscar por quadra, lote, categoria, item..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               InputProps={{

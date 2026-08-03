@@ -26,6 +26,7 @@ Uso:
   ..\.venv\Scripts\python.exe scripts\resync_excel_to_supabase.py caminho\para\planilha.xlsx
   ..\.venv\Scripts\python.exe scripts\resync_excel_to_supabase.py caminho\para\planilha.xlsx --yes
   ..\.venv\Scripts\python.exe scripts\resync_excel_to_supabase.py caminho\para\planilha.xlsx --sheet "Lotes"
+  ..\.venv\Scripts\python.exe scripts\resync_excel_to_supabase.py caminho\para\planilha.xlsx --local "Outro Local"
 """
 import argparse
 import sys
@@ -36,6 +37,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from supabase import create_client
 from app.repositories.excel_lotes import ExcelLoteRepository
 from app.core.config import get_settings
+from scripts._common import resolve_local_id
 
 BATCH_SIZE = 500
 TABLE = "lotes"
@@ -43,11 +45,16 @@ MIN_LOTES_ESPERADOS = 100
 
 
 def main():
+    settings = get_settings()
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("arquivo", help="Caminho do arquivo Excel (.xlsx/.xls) a importar")
     parser.add_argument(
         "--sheet", default=0,
         help="Nome ou índice da aba a ler (padrão: primeira aba)",
+    )
+    parser.add_argument(
+        "--local", default=settings.DEFAULT_LOCAL_NOME,
+        help=f"Nome do Local de destino (padrão: '{settings.DEFAULT_LOCAL_NOME}')",
     )
     parser.add_argument(
         "--yes", action="store_true",
@@ -59,7 +66,6 @@ def main():
     if not excel_path.is_file():
         raise SystemExit(f"Arquivo não encontrado: {excel_path}")
 
-    settings = get_settings()
     if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
         raise SystemExit("SUPABASE_URL / SUPABASE_KEY não configurados em backend/.env")
 
@@ -78,28 +84,32 @@ def main():
             "A tabela do Supabase NÃO foi apagada."
         )
 
+    client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    local_id = resolve_local_id(client, args.local)
+
     if not args.yes:
         resposta = input(
-            f"Isso vai APAGAR todos os lotes da tabela '{TABLE}' no Supabase e "
+            f"Isso vai APAGAR todos os lotes do Local '{args.local}' na tabela "
+            f"'{TABLE}' no Supabase (lotes de outros Locais não são afetados) e "
             f"reimportar {len(lotes)} lotes lidos agora do Excel.\n"
             "Digite SIM para confirmar: "
         )
         if resposta.strip().upper() != "SIM":
             raise SystemExit("Cancelado.")
 
-    client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-
-    print(f"Apagando dados atuais da tabela '{TABLE}'...")
-    client.table(TABLE).delete().neq("id", "").execute()
+    print(f"Apagando lotes atuais do Local '{args.local}' na tabela '{TABLE}'...")
+    client.table(TABLE).delete().eq("local_id", local_id).execute()
 
     print("Importando lotes do Excel...")
     rows = [lote.model_dump() for lote in lotes]
+    for row in rows:
+        row["local_id"] = local_id
     for i in range(0, len(rows), BATCH_SIZE):
         batch = rows[i:i + BATCH_SIZE]
         client.table(TABLE).upsert(batch, on_conflict="id").execute()
         print(f"  ...{min(i + BATCH_SIZE, len(rows))}/{len(rows)} importados")
 
-    print(f"Reimportação concluída: {len(rows)} lotes na tabela '{TABLE}'.")
+    print(f"Reimportação concluída: {len(rows)} lotes na tabela '{TABLE}' (Local '{args.local}').")
 
 
 if __name__ == "__main__":

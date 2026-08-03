@@ -22,6 +22,15 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: list[str] = ["*"]
 
+    # Autenticação (Master/Corretor)
+    JWT_SECRET_KEY: str = ""
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_MINUTES: int = 1440  # 24h; sem refresh token, expira -> loga de novo
+    MASTER_PASSWORD_HASH: str = ""  # gerado por backend/scripts/hash_password.py
+
+    # Local padrão usado pelos scripts de reimportação quando --local não é informado
+    DEFAULT_LOCAL_NOME: str = "SANTA BARBARA RESORT RESIDENCE"
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 @lru_cache()

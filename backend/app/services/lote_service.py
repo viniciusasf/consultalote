@@ -8,8 +8,8 @@ class LoteService:
 
     def list_lotes(self, filters: LoteFilterParams) -> LoteListResponse:
         items, filtered_count = self.repository.get_lotes_filtered(filters)
-        total = self.repository.count_all()
-        glebas, quadras = self.repository.get_filter_options()
+        total = self.repository.count_all(local_id=filters.local_id)
+        glebas, quadras = self.repository.get_filter_options(local_id=filters.local_id)
 
         return LoteListResponse(
             total=total,

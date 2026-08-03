@@ -18,9 +18,11 @@ class Lote(BaseModel):
     corretagem_6pct: Optional[float] = Field(None, description="Valor da corretagem (6%) em R$")
     iptu_mensal: Optional[float] = Field(None, description="Valor estimado do IPTU mensal em R$")
     disponivel: bool = Field(True, description="Indicador de disponibilidade do lote")
+    local_id: Optional[str] = Field(None, description="Local ao qual o lote pertence")
 
 class LoteFilterParams(BaseModel):
     q: Optional[str] = Field(None, description="Busca textual livre (número do lote ou quadra)")
+    local_id: Optional[str] = Field(None, description="Filtrar por Local específico (corretor: forçado pelo token)")
     gleba: Optional[str] = Field(None, description="Filtrar por Gleba específica")
     quadra: Optional[str] = Field(None, description="Filtrar por Quadra específica")
     area_min: Optional[float] = Field(None, description="Área mínima em m²")

@@ -17,6 +17,9 @@ _PAGE_SIZE = 1000
 # Caracteres que têm significado especial no filtro or_() do PostgREST
 _OR_FILTER_UNSAFE_CHARS = re.compile(r"[,()]")
 
+# Usado para extrair o número de buscas como "Item #1081" ou "1081"
+_NON_DIGITS = re.compile(r"\D")
+
 _ORDER_COLUMNS = {
     "preco_asc": ("valor_base", False),
     "preco_desc": ("valor_base", True),
@@ -49,8 +52,11 @@ class SupabaseLoteRepository(LoteRepository):
             return None
         return Lote(**result.data[0])
 
-    def count_all(self) -> int:
-        result = self.client.table(TABLE).select("id", count="exact", head=True).execute()
+    def count_all(self, local_id: Optional[str] = None) -> int:
+        query = self.client.table(TABLE).select("id", count="exact", head=True)
+        if local_id:
+            query = query.eq("local_id", local_id)
+        result = query.execute()
         return result.count or 0
 
     def _fetch_all_rows(self, build_query) -> Tuple[List[dict], int]:
@@ -70,10 +76,14 @@ class SupabaseLoteRepository(LoteRepository):
             offset += _PAGE_SIZE
         return rows, total
 
-    def get_filter_options(self) -> Tuple[List[str], List[str]]:
-        rows, _ = self._fetch_all_rows(
-            lambda: self.client.table(TABLE).select("gleba,quadra", count="exact")
-        )
+    def get_filter_options(self, local_id: Optional[str] = None) -> Tuple[List[str], List[str]]:
+        def build_query():
+            query = self.client.table(TABLE).select("gleba,quadra", count="exact")
+            if local_id:
+                query = query.eq("local_id", local_id)
+            return query
+
+        rows, _ = self._fetch_all_rows(build_query)
         glebas = sorted({row["gleba"] for row in rows if row.get("gleba")})
         quadras = sorted({row["quadra"] for row in rows if row.get("quadra")})
         return glebas, quadras
@@ -81,6 +91,9 @@ class SupabaseLoteRepository(LoteRepository):
     def get_lotes_filtered(self, filters: LoteFilterParams) -> Tuple[List[Lote], int]:
         def build_query():
             query = self.client.table(TABLE).select("*", count="exact")
+
+            if filters.local_id:
+                query = query.eq("local_id", filters.local_id)
 
             if filters.q:
                 q = _OR_FILTER_UNSAFE_CHARS.sub("", filters.q.strip())
@@ -90,6 +103,11 @@ class SupabaseLoteRepository(LoteRepository):
                         # tamanho_categoria é numeric no banco: PostgREST não aceita
                         # cast (::text) dentro do or_(), então comparamos por igualdade.
                         or_conditions.append(f"tamanho_categoria.eq.{int(q)}")
+                    # Permite buscar pelo "Item #1081" exibido no modal de detalhes,
+                    # digitando só o número ou o texto completo com o "#".
+                    digitos = _NON_DIGITS.sub("", q)
+                    if digitos:
+                        or_conditions.append(f"ordem.eq.{int(digitos)}")
                     query = query.or_(",".join(or_conditions))
 
             if filters.gleba:

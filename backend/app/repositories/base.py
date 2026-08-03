@@ -15,8 +15,10 @@ class LoteRepository(ABC):
         pass
 
     @abstractmethod
-    def count_all(self) -> int:
-        """Retorna a quantidade total de lotes cadastrados, sem aplicar filtros."""
+    def count_all(self, local_id: Optional[str] = None) -> int:
+        """Retorna a quantidade total de lotes cadastrados, sem aplicar filtros
+        (exceto local_id, quando informado — usado para restringir o total
+        visível a um corretor ao seu Local)."""
         pass
 
     @abstractmethod
@@ -25,6 +27,7 @@ class LoteRepository(ABC):
         pass
 
     @abstractmethod
-    def get_filter_options(self) -> Tuple[List[str], List[str]]:
-        """Retorna (glebas_disponiveis, quadras_disponiveis) ordenadas."""
+    def get_filter_options(self, local_id: Optional[str] = None) -> Tuple[List[str], List[str]]:
+        """Retorna (glebas_disponiveis, quadras_disponiveis) ordenadas, restritas
+        a local_id quando informado."""
         pass

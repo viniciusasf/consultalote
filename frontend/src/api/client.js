@@ -11,6 +11,31 @@ const apiClient = axios.create({
   timeout: 15000,
 });
 
+export const setAuthToken = (token) => {
+  if (token) {
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete apiClient.defaults.headers.common['Authorization'];
+  }
+};
+
+// Callback registrado pelo AuthContext — chamado quando o backend rejeita o
+// token atual (expirado/inválido), pra limpar a sessão e voltar ao login.
+let onUnauthorized = null;
+export const setOnUnauthorized = (callback) => {
+  onUnauthorized = callback;
+};
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && onUnauthorized) {
+      onUnauthorized();
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const fetchLotes = async (filters = {}) => {
   const params = new URLSearchParams();
 

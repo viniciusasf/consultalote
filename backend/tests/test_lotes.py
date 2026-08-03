@@ -1,10 +1,17 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from app.core.security import get_current_claims
+from app.models.auth import TokenClaims
 from app.models.lote import Lote, LoteFilterParams
 from app.repositories.base import LoteRepository
 from app.services.lote_service import LoteService
 from app.services.lote_filtering import filter_and_sort_lotes, filter_options
+
+# Os testes HTTP abaixo pré-existem à autenticação e continuam validando
+# comportamento de listagem/filtro em si; simulam sessão de Master (sem
+# restrição de local_id) para não precisar de um token real.
+app.dependency_overrides[get_current_claims] = lambda: TokenClaims(sub="master", role="master", local_id=None)
 
 client = TestClient(app)
 
@@ -73,15 +80,18 @@ class MockLoteRepository(LoteRepository):
                 return l
         return None
 
-    def count_all(self):
+    def count_all(self, local_id=None):
+        if local_id:
+            return len([l for l in self.lotes if l.local_id == local_id])
         return len(self.lotes)
 
     def get_lotes_filtered(self, filters: LoteFilterParams):
         items = filter_and_sort_lotes(self.lotes, filters)
         return items, len(items)
 
-    def get_filter_options(self):
-        return filter_options(self.lotes)
+    def get_filter_options(self, local_id=None):
+        lotes = [l for l in self.lotes if l.local_id == local_id] if local_id else self.lotes
+        return filter_options(lotes)
 
 def test_lote_service_search_and_filters():
     repo = MockLoteRepository()

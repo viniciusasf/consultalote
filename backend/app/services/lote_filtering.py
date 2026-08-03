@@ -1,5 +1,8 @@
+import re
 from typing import List, Tuple
 from app.models.lote import Lote, LoteFilterParams
+
+_NON_DIGITS = re.compile(r"\D")
 
 
 def filter_and_sort_lotes(lotes: List[Lote], filters: LoteFilterParams) -> List[Lote]:
@@ -7,14 +10,19 @@ def filter_and_sort_lotes(lotes: List[Lote], filters: LoteFilterParams) -> List[
     (ex: mocks de teste), espelhando o que o SupabaseLoteRepository faz via query."""
     filtered = lotes
 
+    if filters.local_id:
+        filtered = [l for l in filtered if l.local_id == filters.local_id]
+
     if filters.q:
         query = filters.q.strip().lower()
+        digitos = _NON_DIGITS.sub("", query)
         filtered = [
             l for l in filtered
             if query in l.lote.lower()
             or query in l.quadra.lower()
             or query in l.id.lower()
             or (query.isdigit() and l.tamanho_categoria == int(query))
+            or (digitos and l.ordem == int(digitos))
         ]
 
     if filters.gleba:
