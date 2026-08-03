@@ -12,8 +12,9 @@ import {
   Typography,
   InputAdornment,
 } from '@mui/material';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import { gerarOrcamentoPdf, exportarOuCompartilharPdf } from '../utils/gerarOrcamentoPdf';
+import DownloadIcon from '@mui/icons-material/Download';
+import ShareIcon from '@mui/icons-material/Share';
+import { gerarOrcamentoPdf, baixarPdf, compartilharPdf } from '../utils/gerarOrcamentoPdf';
 import { TAXAS_FIXAS, TOTAL_TAXAS_FIXAS } from '../utils/orcamentoCalculo';
 
 const formatCurrency = (val) =>
@@ -37,28 +38,46 @@ export default function OrcamentoSimulador({
   calculo,
 }) {
   const valorLote = lote.valor_base;
-  const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [gerandoPdf, setGerandoPdf] = useState(null); // null | 'baixar' | 'compartilhar'
   const [erroPdf, setErroPdf] = useState(null);
 
-  const handleExportarPdf = async () => {
+  const nomeArquivo = `orcamento-quadra-${lote.quadra}-lote-${lote.lote}.pdf`;
+
+  const gerarDoc = () =>
+    gerarOrcamentoPdf({
+      lote,
+      percEntrada,
+      taxaJurosMensal,
+      prazoMeses,
+      valorLote,
+      taxasFixas: TAXAS_FIXAS,
+      totalTaxas: TOTAL_TAXAS_FIXAS,
+      ...calculo,
+    });
+
+  const handleBaixarPdf = async () => {
     setErroPdf(null);
-    setGerandoPdf(true);
+    setGerandoPdf('baixar');
     try {
-      const doc = await gerarOrcamentoPdf({
-        lote,
-        percEntrada,
-        taxaJurosMensal,
-        prazoMeses,
-        valorLote,
-        taxasFixas: TAXAS_FIXAS,
-        totalTaxas: TOTAL_TAXAS_FIXAS,
-        ...calculo,
-      });
-      await exportarOuCompartilharPdf(doc, `orcamento-quadra-${lote.quadra}-lote-${lote.lote}.pdf`);
+      const doc = await gerarDoc();
+      baixarPdf(doc, nomeArquivo);
     } catch (e) {
       setErroPdf('Não foi possível gerar o PDF. Tente novamente.');
     } finally {
-      setGerandoPdf(false);
+      setGerandoPdf(null);
+    }
+  };
+
+  const handleCompartilharPdf = async () => {
+    setErroPdf(null);
+    setGerandoPdf('compartilhar');
+    try {
+      const doc = await gerarDoc();
+      await compartilharPdf(doc, nomeArquivo);
+    } catch (e) {
+      setErroPdf('Não foi possível gerar o PDF. Tente novamente.');
+    } finally {
+      setGerandoPdf(null);
     }
   };
 
@@ -208,16 +227,28 @@ export default function OrcamentoSimulador({
 
       {/* Exportação do orçamento em PDF */}
       <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={gerandoPdf ? <CircularProgress size={18} color="inherit" /> : <PictureAsPdfIcon />}
-          onClick={handleExportarPdf}
-          disabled={gerandoPdf}
-          id="btn-exportar-orcamento-pdf"
-        >
-          {gerandoPdf ? 'Gerando PDF...' : 'Exportar / Enviar PDF'}
-        </Button>
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={gerandoPdf === 'baixar' ? <CircularProgress size={18} color="inherit" /> : <DownloadIcon />}
+            onClick={handleBaixarPdf}
+            disabled={!!gerandoPdf}
+            id="btn-baixar-orcamento-pdf"
+          >
+            {gerandoPdf === 'baixar' ? 'Gerando PDF...' : 'Baixar PDF'}
+          </Button>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={gerandoPdf === 'compartilhar' ? <CircularProgress size={18} color="inherit" /> : <ShareIcon />}
+            onClick={handleCompartilharPdf}
+            disabled={!!gerandoPdf}
+            id="btn-compartilhar-orcamento-pdf"
+          >
+            {gerandoPdf === 'compartilhar' ? 'Gerando PDF...' : 'Compartilhar (WhatsApp e outros)'}
+          </Button>
+        </Stack>
         {erroPdf && (
           <Typography variant="caption" color="error">
             {erroPdf}

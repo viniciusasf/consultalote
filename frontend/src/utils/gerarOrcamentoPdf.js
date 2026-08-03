@@ -100,6 +100,7 @@ export async function gerarOrcamentoPdf({
   doc.setFontSize(10);
   doc.setTextColor(...CINZA_TEXTO);
   const infoLote = [
+    lote.ordem ? `Item #${lote.ordem}` : null,
     lote.gleba ? `Gleba ${lote.gleba}` : null,
     lote.area_m2 ? `${lote.area_m2.toLocaleString('pt-BR')} m²` : null,
     lote.tamanho_categoria ? `Categoria ${lote.tamanho_categoria}m²` : null,
@@ -250,10 +251,17 @@ export async function gerarOrcamentoPdf({
 }
 
 /**
- * Baixa o PDF ou, quando suportado (principalmente em celulares), abre o menu
- * nativo de compartilhamento — permitindo enviar direto pelo WhatsApp.
+ * Sempre baixa/salva o PDF localmente (funciona igual em desktop e celular).
  */
-export async function exportarOuCompartilharPdf(doc, nomeArquivo) {
+export function baixarPdf(doc, nomeArquivo) {
+  doc.save(nomeArquivo);
+}
+
+/**
+ * Abre o menu nativo de compartilhamento (WhatsApp, e-mail, etc), quando o
+ * dispositivo suporta. Se não suportar, cai para o download comum.
+ */
+export async function compartilharPdf(doc, nomeArquivo) {
   const blob = doc.output('blob');
   const arquivo = new File([blob], nomeArquivo, { type: 'application/pdf' });
 
