@@ -24,16 +24,31 @@ import CalculateIcon from '@mui/icons-material/Calculate';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import OrcamentoSimulador from './OrcamentoSimulador';
+import { calcularOrcamento, ORCAMENTO_DEFAULTS } from '../utils/orcamentoCalculo';
 
 export default function LoteDetailModal({ lote, open, onClose }) {
   const [mostrarOrcamento, setMostrarOrcamento] = React.useState(false);
   const [mostrarDetalhes, setMostrarDetalhes] = React.useState(false);
 
-  // Reseta a exibição do simulador e dos detalhes sempre que um novo lote é aberto
+  // Estado do Simulador de Orçamento vive aqui para que o card de
+  // financiamento acima espelhe sempre os mesmos valores calculados.
+  const [percEntrada, setPercEntrada] = React.useState(ORCAMENTO_DEFAULTS.percEntrada);
+  const [taxaJurosMensal, setTaxaJurosMensal] = React.useState(ORCAMENTO_DEFAULTS.taxaJurosMensal);
+  const [prazoMeses, setPrazoMeses] = React.useState(ORCAMENTO_DEFAULTS.prazoMeses);
+
+  // Reseta a exibição do simulador, dos detalhes e a simulação sempre que um novo lote é aberto
   React.useEffect(() => {
     setMostrarOrcamento(false);
     setMostrarDetalhes(false);
+    setPercEntrada(ORCAMENTO_DEFAULTS.percEntrada);
+    setTaxaJurosMensal(ORCAMENTO_DEFAULTS.taxaJurosMensal);
+    setPrazoMeses(ORCAMENTO_DEFAULTS.prazoMeses);
   }, [lote?.id]);
+
+  const calculo = React.useMemo(
+    () => calcularOrcamento({ valorLote: lote?.valor_base, percEntrada, taxaJurosMensal, prazoMeses }),
+    [lote?.valor_base, percEntrada, taxaJurosMensal, prazoMeses]
+  );
 
   if (!lote) return null;
 
@@ -147,13 +162,13 @@ export default function LoteDetailModal({ lote, open, onClose }) {
                 }}
               >
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>
-                  Plano Financiado 180 Meses
+                  Plano Financiado 180 Meses - 2% Entrada - {formatCurrency(calculo.valorEntrada)}
                 </Typography>
                 <Typography variant="h4" color="text.primary" sx={{ fontWeight: 800, my: 0.5, fontFamily: 'Outfit, sans-serif' }}>
-                  180x {formatCurrency(lote.valor_parcela_180x)}
+                  {formatCurrency(calculo.pagamentoComTaxas)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Preço total financiado: <strong>{formatCurrency(lote.preco_financiado_180x)}</strong>
+                  Valor financiado: <strong>{formatCurrency(calculo.valorFinanciado)}</strong>
                 </Typography>
               </Paper>
             </Grid>
@@ -237,7 +252,17 @@ export default function LoteDetailModal({ lote, open, onClose }) {
           <Divider sx={{ my: 3 }} />
         </Collapse>
 
-        <OrcamentoSimulador lote={lote} open={mostrarOrcamento} />
+        <OrcamentoSimulador
+          lote={lote}
+          open={mostrarOrcamento}
+          percEntrada={percEntrada}
+          onPercEntradaChange={setPercEntrada}
+          taxaJurosMensal={taxaJurosMensal}
+          onTaxaJurosMensalChange={setTaxaJurosMensal}
+          prazoMeses={prazoMeses}
+          onPrazoMesesChange={setPrazoMeses}
+          calculo={calculo}
+        />
       </DialogContent>
 
       <DialogActions sx={{ p: 3, pt: 0 }}>

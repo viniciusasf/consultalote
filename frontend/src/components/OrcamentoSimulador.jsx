@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -14,55 +14,31 @@ import {
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { gerarOrcamentoPdf, exportarOuCompartilharPdf } from '../utils/gerarOrcamentoPdf';
-
-// Taxas mensais fixas cobradas independente do valor financiado
-// (conservação da área, serviço "Slim", melhoramentos e transporte)
-const TAXAS_FIXAS = [
-  { label: 'Conservação', valor: 440.03 },
-  { label: 'Slim', valor: 107.0 },
-  { label: 'Melhoramento', valor: 245.47 },
-  { label: 'Transporte', valor: 13.0 },
-];
-const TOTAL_TAXAS_FIXAS = TAXAS_FIXAS.reduce((soma, t) => soma + t.valor, 0);
+import { TAXAS_FIXAS, TOTAL_TAXAS_FIXAS } from '../utils/orcamentoCalculo';
 
 const formatCurrency = (val) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
     Number.isFinite(val) ? val : 0
   );
 
-export default function OrcamentoSimulador({ lote, open }) {
+// Componente controlado: o estado da simulação (percentuais, prazo e o
+// resultado calculado) vive no LoteDetailModal, para que o card de
+// financiamento no topo do modal e este simulador mostrem sempre os
+// mesmos valores.
+export default function OrcamentoSimulador({
+  lote,
+  open,
+  percEntrada,
+  onPercEntradaChange,
+  taxaJurosMensal,
+  onTaxaJurosMensalChange,
+  prazoMeses,
+  onPrazoMesesChange,
+  calculo,
+}) {
   const valorLote = lote.valor_base;
-  const [percEntrada, setPercEntrada] = useState(2);
-  // 0,3312% a.m. é a taxa efetiva usada pela planilha oficial (o "0,33%" exibido lá é arredondado)
-  const [taxaJurosMensal, setTaxaJurosMensal] = useState(0.3312);
-  const [prazoMeses, setPrazoMeses] = useState(180);
   const [gerandoPdf, setGerandoPdf] = useState(false);
   const [erroPdf, setErroPdf] = useState(null);
-
-  const calculo = useMemo(() => {
-    const entrada = Math.max(0, Math.min(100, Number(percEntrada) || 0)) / 100;
-    const juros = Math.max(0, Number(taxaJurosMensal) || 0) / 100;
-    const prazo = Math.max(0, Math.trunc(Number(prazoMeses) || 0));
-
-    const valorEntrada = valorLote * entrada;
-    const valorFinanciado = valorLote - valorEntrada;
-
-    let pagamentoMensal = 0;
-    if (prazo > 0) {
-      pagamentoMensal =
-        juros > 0
-          ? (valorFinanciado * juros) / (1 - Math.pow(1 + juros, -prazo))
-          : valorFinanciado / prazo;
-    }
-
-    return {
-      valorEntrada,
-      valorFinanciado,
-      pagamentoMensal,
-      numeroPagamentos: prazo,
-      pagamentoComTaxas: pagamentoMensal + TOTAL_TAXAS_FIXAS,
-    };
-  }, [valorLote, percEntrada, taxaJurosMensal, prazoMeses]);
 
   const handleExportarPdf = async () => {
     setErroPdf(null);
@@ -103,7 +79,7 @@ export default function OrcamentoSimulador({ lote, open }) {
             size="small"
             fullWidth
             value={percEntrada}
-            onChange={(e) => setPercEntrada(e.target.value)}
+            onChange={(e) => onPercEntradaChange(e.target.value)}
             InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
             inputProps={{ min: 0, max: 100, step: 0.5 }}
             id="input-orcamento-perc-entrada"
@@ -116,7 +92,7 @@ export default function OrcamentoSimulador({ lote, open }) {
             size="small"
             fullWidth
             value={taxaJurosMensal}
-            onChange={(e) => setTaxaJurosMensal(e.target.value)}
+            onChange={(e) => onTaxaJurosMensalChange(e.target.value)}
             InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
             inputProps={{ min: 0, step: 0.0001 }}
             id="input-orcamento-taxa-juros"
@@ -129,7 +105,7 @@ export default function OrcamentoSimulador({ lote, open }) {
             size="small"
             fullWidth
             value={prazoMeses}
-            onChange={(e) => setPrazoMeses(e.target.value)}
+            onChange={(e) => onPrazoMesesChange(e.target.value)}
             inputProps={{ min: 1, step: 1 }}
             id="input-orcamento-prazo-meses"
           />
