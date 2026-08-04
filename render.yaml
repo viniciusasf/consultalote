@@ -11,3 +11,7 @@ services:
         sync: false
       - key: SUPABASE_KEY
         sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: MASTER_PASSWORD_HASH
+        sync: false
