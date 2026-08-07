@@ -7,6 +7,7 @@ import RequireAuth from './components/RequireAuth';
 import RequireMaster from './components/RequireMaster';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import OrcamentoAvulsoPage from './pages/OrcamentoAvulsoPage';
 import LocaisAdminPage from './pages/admin/LocaisAdminPage';
 import UsuariosAdminPage from './pages/admin/UsuariosAdminPage';
 import PerfisAdminPage from './pages/admin/PerfisAdminPage';
@@ -19,6 +20,7 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/orcamento-avulso" element={<OrcamentoAvulsoPage />} />
 
             <Route element={<RequireAuth />}>
               <Route path="/" element={<HomePage />} />

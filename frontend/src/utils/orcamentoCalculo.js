@@ -18,7 +18,7 @@ export const ORCAMENTO_DEFAULTS = {
 // Fórmula compartilhada entre o Simulador de Orçamento e o card de
 // financiamento do modal de detalhes — os dois precisam exibir exatamente
 // o mesmo resultado a partir do mesmo estado.
-export function calcularOrcamento({ valorLote, percEntrada, taxaJurosMensal, prazoMeses }) {
+export function calcularOrcamento({ valorLote, percEntrada, taxaJurosMensal, prazoMeses, totalTaxasFixas = TOTAL_TAXAS_FIXAS }) {
   const entrada = Math.max(0, Math.min(100, Number(percEntrada) || 0)) / 100;
   const juros = Math.max(0, Number(taxaJurosMensal) || 0) / 100;
   const prazo = Math.max(0, Math.trunc(Number(prazoMeses) || 0));
@@ -40,6 +40,6 @@ export function calcularOrcamento({ valorLote, percEntrada, taxaJurosMensal, pra
     valorFinanciado,
     pagamentoMensal,
     numeroPagamentos: prazo,
-    pagamentoComTaxas: pagamentoMensal + TOTAL_TAXAS_FIXAS,
+    pagamentoComTaxas: pagamentoMensal + totalTaxasFixas,
   };
 }

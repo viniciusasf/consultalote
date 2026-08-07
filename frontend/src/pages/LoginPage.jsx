@@ -124,6 +124,18 @@ export default function LoginPage() {
           >
             {carregando ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
           </Button>
+
+          <Button
+            variant="outlined"
+            color="primary"
+            size="large"
+            fullWidth
+            onClick={() => navigate('/orcamento-avulso')}
+            id="btn-orcamento-avulso"
+            sx={{ mt: 1 }}
+          >
+            Simulador de Orçamento
+          </Button>
         </Box>
       </Paper>
     </Box>
